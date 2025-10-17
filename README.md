@@ -1,6 +1,6 @@
 # Evidencia de Aprendizaje N°3 - Sistema IoT con Dashboard Web
 
-### EVIDENCIA DE APRENDIZAJE N°3
+---
 
 _Escalado de Plataforma IoT con Visualización de Datos en Dashboard Web_
 
