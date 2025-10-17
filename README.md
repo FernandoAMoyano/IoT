@@ -75,18 +75,6 @@ SolucionEV-3/
 ├── .env                       # Variables de entorno (credenciales)
 ├── requirements.txt           # Dependencias Python
 ├── README.md                  # Este archivo
-├── documentacion/             # Documentación técnica
-│   ├── instalacion_grafana.md
-│   ├── configuracion_grafana.md
-│   ├── creacion_dashboard.md
-│   ├── alertas_grafana.md
-│   ├── manual_usuario.md
-│   └── arquitectura.md
-└── informe/                   # Informe académico completo
-    ├── 00_portada.md
-    ├── 01_indice.md
-    ├── 02_introduccion.md
-    └── ... (15 secciones)
 ```
 
 - [inidce](#-índice)
