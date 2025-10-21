@@ -189,7 +189,6 @@ http://localhost:3000
 #### Terminal 1 - Servidor
 
 ```bash
-cd SolucionEV-3
 python servidor_mqtt_mysql.py
 ```
 
@@ -206,7 +205,6 @@ Deberías ver:
 #### Terminal 2 - Simulador
 
 ```bash
-cd SolucionEV-3
 python simulador.py
 ```
 
