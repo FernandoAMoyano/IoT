@@ -1,0 +1,159 @@
+@startuml Arquitectura IoT - Vista Compacta
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle rectangle
+
+title <size:20><b>Arquitectura de 5 Capas IoT</b></size>\nSistema de Control de Iluminación Automática
+
+' ========== CAPA 5 ==========
+rectangle "<size:16><b>CAPA 5: APLICACIÓN</b></size>\n<color:#4CAF50><b>Lógica de Negocio</b></color>" as layer5 #E3F2FD {
+    
+    rectangle "<b>Grafana</b>\nDashboard Web\n━━━━━━━━━━━\n6 Paneles:\n• Serie temporal\n• Estado LED\n• Gráfico torta\n• Tabla datos\n• Estadísticas\n• Contador" as grafana #4CAF50
+    
+    database "<b>MySQL</b>\nBase de Datos\n━━━━━━━━━━━\nTabla: datos_luminosidad\n• id, nivel_luz\n• estado_led\n• clasificacion\n• timestamp" as mysql #FF9800
+    
+    rectangle "<b>Servidor Python</b>\nLógica Central\n━━━━━━━━━━━\n• Cliente MQTT\n• Clasificación datos\n• Almacenamiento BD\n━━━━━━━━━━━\nUmbral: ≤750=BAJA\n>750=ALTA" as python #2196F3
+}
+
+' ========== CAPA 4 ==========
+rectangle "<size:16><b>CAPA 4: TRANSPORTE</b></size>\n<color:#9C27B0><b>Protocolo MQTT</b></color>" as layer4 #F3E5F5 {
+    
+    cloud "<b>Broker MQTT</b>\nHiveMQ Público\n━━━━━━━━━━━\nPuerto: 1883\nModelo: Pub/Sub\nQoS: 0" as broker #9C27B0 {
+        queue "iot/luminosidad" as topic1 #CE93D8
+        queue "iot/led/estado" as topic2 #CE93D8
+    }
+}
+
+' ========== CAPA 3 ==========
+rectangle "<size:16><b>CAPA 3: RED</b></size>\n<color:#1565C0><b>Protocolos TCP/IP</b></color>" as layer3 #E1F5FE {
+    
+    cloud "<b>Internet</b>\n━━━━━━━━━━━\n• Enrutamiento IP\n• DNS\n• Gateway" as internet #1565C0
+}
+
+' ========== CAPA 2 ==========
+rectangle "<size:16><b>CAPA 2: CONECTIVIDAD</b></size>\n<color:#FF6F00><b>WiFi 2.4 GHz</b></color>" as layer2 #FFF3E0 {
+    
+    node "<b>WiFi 802.11</b>\n━━━━━━━━━━━\n• SSID: Red Local\n• WPA2\n• DHCP" as wifi #FF9800
+}
+
+' ========== CAPA 1 ==========
+rectangle "<size:16><b>CAPA 1: FÍSICA</b></size>\n<color:#2E7D32><b>Hardware</b></color>" as layer1 #E8F5E9 {
+    
+    rectangle "<b>ESP32 DevKit</b>\n━━━━━━━━━━━\nCPU: 32-bit Xtensa\nWiFi integrado\nADC: 12-bit\nFirmware: MicroPython\n━━━━━━━━━━━\nCiclo: cada 2 seg" as esp32 #4CAF50
+    
+    component "<b>Sensor LDR</b>\n━━━━━━━━━━━\nPin: GPIO 36\nRango: 0-1023\nUmbral: 750" as ldr #2196F3
+    
+    component "<b>LED</b>\n━━━━━━━━━━━\nPin: GPIO 18\nON = Poca luz\nOFF = Luz suficiente" as led #F44336
+}
+
+' ========== CONEXIONES PRINCIPALES ==========
+
+ldr -[#2196F3]-> esp32 : <color:#2196F3>Señal\nanalógica
+esp32 -[#F44336]-> led : <color:#F44336>Control\ndigital
+
+esp32 -[#FF9800]-> wifi : <color:#FF9800>Conexión\nWiFi
+wifi -[#1565C0]-> internet : <color:#1565C0>Paquetes\nIP
+internet -[#9C27B0]-> broker : <color:#9C27B0>TCP\n:1883
+
+esp32 .[#9C27B0].> topic1 : <color:#9C27B0>PUBLISH
+esp32 .[#9C27B0].> topic2 : <color:#9C27B0>PUBLISH
+
+topic1 .[#9C27B0].> python : <color:#9C27B0>SUBSCRIBE
+topic2 .[#9C27B0].> python : <color:#9C27B0>SUBSCRIBE
+
+python -[#FF9800]-> mysql : <color:#FF9800>INSERT\nDatos
+mysql -[#4CAF50]-> grafana : <color:#4CAF50>SELECT\ncada 5s
+
+' ========== ANOTACIONES ==========
+
+note right of esp32
+    <b><color:#4CAF50>CICLO PRINCIPAL</color></b>
+    ═══════════════════
+    <b>1.</b> Leer sensor LDR
+    <b>2.</b> Convertir ADC (0-1023)
+    <b>3.</b> Evaluar umbral ≤750?
+    <b>4.</b> Controlar LED (ON/OFF)
+    <b>5.</b> Publicar MQTT:
+       • luminosidad
+       • estado_led
+    <b>6.</b> Esperar 2 segundos
+    <b>7.</b> Repetir infinitamente
+    ═══════════════════
+    <color:#F44336>Manejo de errores:</color>
+    • Reconexión WiFi auto
+    • Reintentos MQTT
+    • Funcionamiento local
+end note
+
+note left of grafana
+    <b><color:#2196F3>VISUALIZACIÓN</color></b>
+    ═══════════════════
+    <b>Actualización: cada 5s</b>
+    
+    <b>Consultas SQL en tiempo real:</b>
+    • SELECT nivel_luz, timestamp
+    • WHERE timestamp >= NOW() - 15m
+    • GROUP BY clasificacion
+    • COUNT(*) estado_led
+    
+    <b>Paneles interactivos:</b>
+    ✓ Gráfico líneas (histórico)
+    ✓ Indicador estado (actual)
+    ✓ Torta (distribución)
+    ✓ Tabla (últimas 20)
+    ✓ Stats (promedio/min/max)
+    ✓ Contador (eventos)
+end note
+
+note bottom of broker
+    <b><color:#9C27B0>MQTT Pub/Sub</color></b>
+    ═══════════════════════
+    <b>Ventajas vs HTTP:</b>
+    ✓ Más ligero (↓ ancho banda)
+    ✓ Mejor con conexiones inestables
+    ✓ Desacoplamiento dispositivos
+    ✓ Entrega instantánea
+    ✓ Escalable (millones dispositivos)
+    
+    <b>Broker público HiveMQ:</b>
+    • Gratuito para prototipos
+    • Sin autenticación
+    • QoS 0 (fire and forget)
+end note
+
+' ========== LEYENDA CON MÉTRICAS ==========
+
+legend right
+    <b><size:14>DATOS TÉCNICOS DEL SISTEMA</size></b>
+    ═══════════════════════════════════
+    
+    <b><color:#4CAF50>⚙ CONFIGURACIÓN:</color></b>
+    • Umbral luminosidad: 750
+    • Frecuencia lectura ESP32: 2 seg
+    • Frecuencia actualización Grafana: 5 seg
+    • ADC Resolution: 12-bit (0-4095)
+    • ADC Attenuation: 11dB (rango completo)
+    
+    <b><color:#2196F3>🔧 TECNOLOGÍAS:</color></b>
+    • Hardware: ESP32 DevKit V1
+    • Firmware: MicroPython 1.20+
+    • Backend: Python 3.x
+    • Protocolo: MQTT v3.1.1
+    • Base de datos: MySQL 8.0+
+    • Visualización: Grafana 10.x
+    
+    <b><color:#FF9800>📊 RENDIMIENTO:</color></b>
+    • Latencia end-to-end: <1 segundo
+    • Mensajes MQTT: 2 por ciclo
+    • Registros BD: 1 por ciclo (2seg)
+    • Consultas Grafana: N queries cada 5seg
+    
+    <b><color:#9C27B0>🌐 ESCALABILIDAD:</color></b>
+    • Dispositivos soportados: 100+
+    • Costo por dispositivo: ~$15 USD
+    • Almacenamiento: Ilimitado (MySQL)
+    • Dashboards: Múltiples usuarios
+end legend
+
+@enduml
