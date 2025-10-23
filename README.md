@@ -311,6 +311,8 @@ http://localhost:3000
 4. **Capa de Transporte:** Protocolo MQTT v3.1.1
 5. **Capa de Aplicación:** Servidor Python + MySQL + Grafana
 
+![Arquitectura 5 capas](./images/Arquitectura%205%20capas.png)
+
 - [inidce](#-índice)
 
 ## Consultas Útiles en Grafana
