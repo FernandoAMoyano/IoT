@@ -63,6 +63,7 @@ def main():
     print(" Evidencia de Aprendizaje N°3")
     print("=" * 60)
 
+    # Parametros de luminosidad como referencia
     print(f"\n[CONFIG] Umbral de luz: {config.UMBRAL_LUZ}")
     print(f"[CONFIG] Si luminosidad <= {config.UMBRAL_LUZ}: LED ENCENDIDO")
     print(f"[CONFIG] Si luminosidad > {config.UMBRAL_LUZ}: LED APAGADO")
