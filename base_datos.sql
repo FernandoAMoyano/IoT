@@ -41,10 +41,17 @@ CREATE TABLE IF NOT EXISTS datos_luminosidad (
 -- CONSULTAS ÚTILES PARA MONITOREO
 -- =============================================================================
 
+-------------------------------------------------------------------------------
 -- Ver las últimas 10 lecturas
+-------------------------------------------------------------------------------
+
 -- SELECT * FROM datos_luminosidad ORDER BY timestamp DESC LIMIT 10;
 
+-------------------------------------------------------------------------------
 -- Ver estadísticas generales
+-------------------------------------------------------------------------------
+
+
 -- SELECT 
 --     COUNT(*) as total_lecturas,
 --     AVG(nivel_luz) as promedio_luz,
@@ -54,22 +61,34 @@ CREATE TABLE IF NOT EXISTS datos_luminosidad (
 --     COUNT(CASE WHEN estado_led = 'APAGADO' THEN 1 END) as veces_apagado
 -- FROM datos_luminosidad;
 
+------------------------------------------------------------------------------
 -- Ver lecturas del último día
+-------------------------------------------------------------------------------
+
 -- SELECT * FROM datos_luminosidad 
 -- WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 1 DAY)
 -- ORDER BY timestamp DESC;
 
+------------------------------------------------------------------------------
 -- Ver lecturas por clasificación
+------------------------------------------------------------------------------
+
 -- SELECT clasificacion, COUNT(*) as cantidad
 -- FROM datos_luminosidad
 -- GROUP BY clasificacion;
 
+------------------------------------------------------------------------------
 -- Limpiar todos los datos (CUIDADO: esto borra todo)
+------------------------------------------------------------------------------
+
 -- DELETE FROM datos_luminosidad WHERE id > 0;
+-- TRUNCATE TABLE datos_luminosidad;
+
 
 -- =============================================================================
 -- INFORMACIÓN
 -- =============================================================================
+
 -- Esta base de datos almacena:
 -- - Todas las lecturas del sensor LDR
 -- - Estado del LED en cada lectura
@@ -79,4 +98,5 @@ CREATE TABLE IF NOT EXISTS datos_luminosidad (
 -- El sistema usa un umbral de 750 para determinar:
 -- - Si nivel_luz <= 750: LED ENCENDIDO (LUZ_BAJA)
 -- - Si nivel_luz > 750: LED APAGADO (LUZ_ALTA)
+
 -- =============================================================================
