@@ -9,19 +9,19 @@ title <size:20><b>Arquitectura de 5 Capas IoT</b></size>\nSistema de Control de 
 ' ========== CAPA 5 ==========
 rectangle "<size:16><b>CAPA 5: APLICACIÓN</b></size>\n<color:#4CAF50><b>Lógica de Negocio</b></color>" as layer5 #E3F2FD {
     
-    rectangle "<b>Grafana</b>\nDashboard Web\n━━━━━━━━━━━\n6 Paneles:\n• Serie temporal\n• Estado LED\n• Gráfico torta\n• Tabla datos\n• Estadísticas\n• Contador" as grafana #4CAF50
+    rectangle "<b>Grafana</b>\nDashboard Web\n━━━━━━━━━━━\n4 Paneles:\n• Serie temporal\n• Estado LED\n• Gráfico torta\n• Tabla datos" as grafana #4CAF50
     
     database "<b>MySQL</b>\nBase de Datos\n━━━━━━━━━━━\nTabla: datos_luminosidad\n• id, nivel_luz\n• estado_led\n• clasificacion\n• timestamp" as mysql #FF9800
     
-    rectangle "<b>Servidor Python</b>\nLógica Central\n━━━━━━━━━━━\n• Cliente MQTT\n• Clasificación datos\n• Almacenamiento BD\n━━━━━━━━━━━\nUmbral: ≤750=BAJA\n>750=ALTA" as python #2196F3
+    rectangle "<b>Servidor Python</b>\nLógica Central\n━━━━━━━━━━━\n• Cliente MQTT\n• Clasificación datos\n• Almacenamiento BD\n━━━━━━━━━━━\nUmbral: ≤1500=BAJA\n>1500=ALTA" as python #2196F3
 }
 
 ' ========== CAPA 4 ==========
 rectangle "<size:16><b>CAPA 4: TRANSPORTE</b></size>\n<color:#9C27B0><b>Protocolo MQTT</b></color>" as layer4 #F3E5F5 {
     
     cloud "<b>Broker MQTT</b>\nHiveMQ Público\n━━━━━━━━━━━\nPuerto: 1883\nModelo: Pub/Sub\nQoS: 0" as broker #9C27B0 {
-        queue "iot/luminosidad" as topic1 #CE93D8
-        queue "iot/led/estado" as topic2 #CE93D8
+        queue "Casa/Luminosidad" as topic1 #CE93D8
+        queue "Casa/LED_Estado" as topic2 #CE93D8
     }
 }
 
@@ -42,9 +42,9 @@ rectangle "<size:16><b>CAPA 1: FÍSICA</b></size>\n<color:#2E7D32><b>Hardware</b
     
     rectangle "<b>ESP32 DevKit</b>\n━━━━━━━━━━━\nCPU: 32-bit Xtensa\nWiFi integrado\nADC: 12-bit\nFirmware: MicroPython\n━━━━━━━━━━━\nCiclo: cada 2 seg" as esp32 #4CAF50
     
-    component "<b>Sensor LDR</b>\n━━━━━━━━━━━\nPin: GPIO 36\nRango: 0-1023\nUmbral: 750" as ldr #2196F3
+    component "<b>Sensor LDR</b>\n━━━━━━━━━━━\nPin: GPIO 34\nRango: 0-4095\nUmbral: 1500" as ldr #2196F3
     
-    component "<b>LED</b>\n━━━━━━━━━━━\nPin: GPIO 18\nON = Poca luz\nOFF = Luz suficiente" as led #F44336
+    component "<b>LED</b>\n━━━━━━━━━━━\nPin: GPIO 2\nON = Poca luz\nOFF = Luz suficiente" as led #F44336
 }
 
 ' ========== CONEXIONES PRINCIPALES ==========
@@ -71,8 +71,8 @@ note right of esp32
     <b><color:#4CAF50>CICLO PRINCIPAL</color></b>
     ═══════════════════
     <b>1.</b> Leer sensor LDR
-    <b>2.</b> Convertir ADC (0-1023)
-    <b>3.</b> Evaluar umbral ≤750?
+    <b>2.</b> Convertir ADC (0-4095)
+    <b>3.</b> Evaluar umbral ≤1500?
     <b>4.</b> Controlar LED (ON/OFF)
     <b>5.</b> Publicar MQTT:
        • luminosidad
@@ -129,11 +129,11 @@ legend right
     ═══════════════════════════════════
     
     <b><color:#4CAF50>⚙ CONFIGURACIÓN:</color></b>
-    • Umbral luminosidad: 750
+    • Umbral luminosidad: 1500
     • Frecuencia lectura ESP32: 2 seg
     • Frecuencia actualización Grafana: 5 seg
     • ADC Resolution: 12-bit (0-4095)
-    • ADC Attenuation: 11dB (rango completo)
+    • ADC Attenuation: 11dB (0–3.3V)
     
     <b><color:#2196F3>🔧 TECNOLOGÍAS:</color></b>
     • Hardware: ESP32 DevKit V1

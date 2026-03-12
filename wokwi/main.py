@@ -17,7 +17,9 @@ import settings
 # =============================================================================
 
 ldr = ADC(Pin(settings.PIN_LDR))
-ldr.atten(ADC.ATTN_11DB)  # Rango completo 0–3.3V → valores 0–4095
+
+# Rango completo 0–3.3V → valores 0–4095
+ldr.atten(ADC.ATTN_11DB)
 
 led = Pin(settings.PIN_LED, Pin.OUT)
 
