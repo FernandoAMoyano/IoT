@@ -1,6 +1,4 @@
-# Evidencia de Aprendizaje N°3 - Sistema IoT con Dashboard Web
-
----
+# Evidencia de Aprendizaje N°3 — Sistema IoT con Dashboard Web
 
 _Escalado de Plataforma IoT con Visualización de Datos en Dashboard Web_
 
@@ -9,299 +7,233 @@ _Escalado de Plataforma IoT con Visualización de Datos en Dashboard Web_
 - Tecnicatura Superior en Desarrollo de Software
 - Materia: Aproximación al Mundo del Trabajo
 - Profesor: Mainero Alejandro Luis
-- Estudiante: Fernando Moyano, Santiago Ortega
+- Alumnos: Fernando Agustín Moyano.
 - Fecha de Entrega: 16 de Octubre de 2025
 
 **Proyecto:**
-Sistema IoT de Control de Iluminación Automática con Dashboard Web de Visualización en Tiempo Real utilizando Grafana
+Sistema IoT de Control de Iluminación Automática con Dashboard Web de Visualización en Tiempo Real utilizando Grafana.
 
 ---
 
 ## 📑 Índice
 
 - [Descripción](#descripción)
-- [Características del Dashboard](#características-del-dashboard)
 - [Estructura del Proyecto](#estructura-del-proyecto)
-- [Instalación Completa](#instalación-completa)
-  - [1. Dependencias Python](#1-dependencias-python)
-  - [2. Base de Datos MySQL](#2-base-de-datos-mysql)
-  - [3. Configuración](#3-configuración)
-  - [4. Instalación de Grafana](#4-instalación-de-grafana)
+- [Instalación del Servidor](#instalación-del-servidor)
 - [Uso del Sistema](#uso-del-sistema)
-  - [Modo 1: Con Hardware Real (ESP32)](#modo-1-con-hardware-real-esp32)
-  - [Modo 2: Sin Hardware (Simulación)](#modo-2-sin-hardware-simulación)
+  - [Modo 1: Simulación con Wokwi](#modo-1-simulación-con-wokwi)
+  - [Modo 2: Con Hardware Real (ESP32)](#modo-2-con-hardware-real-esp32)
 - [Dashboard de Grafana](#dashboard-de-grafana)
-  - [Paneles Disponibles](#paneles-disponibles)
 - [Funcionamiento del Sistema](#funcionamiento-del-sistema)
-  - [Flujo de Datos](#flujo-de-datos)
-  - [Lógica de Control](#lógica-de-control)
-  - [Arquitectura de 5 Capas IoT](#arquitectura-de-5-capas-iot)
 - [Consultas Útiles en Grafana](#consultas-útiles-en-grafana)
 - [Solución de Problemas](#solución-de-problemas)
-- [Acceso Web](#acceso-web)
 - [Tecnologías Utilizadas](#tecnologías-utilizadas)
-- [Características Destacadas](#características-destacadas)
 - [Autores](#autores)
-- [Licencia](#licencia)
 
 ---
 
 ## Descripción
 
-Sistema IoT completo que controla iluminación automática usando ESP32, sensor LDR, MQTT, MySQL y **Dashboard Web con Grafana** para visualización en tiempo real.
+Sistema IoT completo que controla iluminación automática usando ESP32, sensor LDR y LED.
+Los datos se transmiten por MQTT a un servidor Python que los almacena en MySQL.
+Grafana visualiza el historial en tiempo real desde el navegador.
 
-- [inidce](#-índice)
+El circuito del ESP32 puede simularse en **Wokwi** sin necesidad de hardware físico.
 
-## Características del Dashboard
-
-- **Visualización en tiempo real** de niveles de luminosidad
-- **Gráficos interactivos** con histórico de datos
-- **Sistema de alertas** configurables
-- **Estadísticas del sistema** (promedio, máximo, mínimo)
-- **Estado de dispositivos** ESP32
-- **Interfaz web** accesible desde cualquier navegador
-
-- [inidce](#-índice)
+---
 
 ## Estructura del Proyecto
 
 ```
 SolucionEV-3/
-├── esp32_main.py              # Código para ESP32
-├── servidor_mqtt_mysql.py     # Servidor Python con MQTT
-├── simulador.py               # Simulador de hardware
-├── base_datos.sql             # Script de base de datos
-├── config.py                  # Configuración centralizada
-├── .env                       # Variables de entorno (credenciales)
-├── requirements.txt           # Dependencias Python
-├── README.md                  # Este archivo
+├── servidor/                      ← corre en tu PC
+│   ├── servidor.py                receptor MQTT + guardado en MySQL
+│   ├── settings.py                configuración del servidor (lee .env)
+│   ├── base_datos.sql             schema de la base de datos
+│   └── requirements.txt           dependencias Python
+│
+├── wokwi/                         ← corre en el ESP32 (simulado en Wokwi)
+│   ├── main.py                    lógica del ESP32: leer LDR, controlar LED, publicar MQTT
+│   ├── settings.py                configuración del ESP32 (WiFi, pines, topics)
+│   └── diagram.json               circuito del ESP32 para importar en Wokwi
+│
+├── docs/                          ← documentación y diagramas
+│   ├── arquitectura_5_capas_compacta.wsd   diagrama PlantUML
+│   └── images/                    capturas y diagramas visuales
+│       ├── Arquitectura 5 capas.png
+│       └── grafana1–5.jpg
+│
+├── .env                           ← credenciales del servidor (NO subir a Git)
+├── .gitignore
+└── README.md
 ```
 
-- [inidce](#-índice)
+---
 
-## Instalación Completa
+## Instalación del Servidor
 
 ### 1. Dependencias Python
 
 ```bash
-pip install -r requirements.txt
+pip install -r servidor/requirements.txt
 ```
-
-**Dependencias:**
-
-- `paho-mqtt==1.6.1` - Cliente MQTT
-- `mysql-connector-python==8.0.33` - Conexión a MySQL
 
 ### 2. Base de Datos MySQL
 
 ```bash
-mysql -u root -p < base_datos.sql
+mysql -u root -p < servidor/base_datos.sql
 ```
 
-### 3. Configuración
+### 3. Configuración — archivo `.env`
 
-**Opción A: Usando archivo .env (Recomendado)**
-
-Crea un archivo `.env` en la raíz del proyecto:
+Editá el archivo `.env` en la raíz del proyecto con tus credenciales:
 
 ```env
-# MySQL Configuration
+# MySQL
 MYSQL_HOST=localhost
 MYSQL_USER=root
 MYSQL_PASSWORD=tu_contraseña
 MYSQL_DATABASE=control_iluminacion
 
-# WiFi Configuration (para ESP32)
-WIFI_SSID=TU_RED_WIFI
-WIFI_PASSWORD=TU_CONTRASEÑA
-
-# MQTT Configuration
+# MQTT
 MQTT_BROKER=broker.hivemq.com
 MQTT_PORT=1883
+TOPIC_LUMINOSIDAD=Casa/Luminosidad
+TOPIC_LED_ESTADO=Casa/LED_Estado
+
+# Lógica (escala 12 bits, 0–4095)
+UMBRAL_LUZ=3000
 ```
 
-**Opción B: Editando config.py directamente**
-
-```python
-WIFI_SSID = "TU_RED_WIFI"
-WIFI_PASSWORD = "TU_CONTRASEÑA"
-
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'TU_CONTRASEÑA_MYSQL',
-    'database': 'control_iluminacion'
-}
-```
+> ⚠️ El `.env` nunca debe subirse a repositorios públicos — ya está en `.gitignore`.
 
 ### 4. Instalación de Grafana
 
-Ver guía detallada en: `documentacion/instalacion_grafana.md`
-
-**Resumen rápido:**
-
-1. Descargar Grafana: https://grafana.com/grafana/download?platform=windows
-2. Extraer en una carpeta (ej: `C:\Grafana\`)
-3. Ejecutar `grafana-server.exe` desde `bin/`
-4. Acceder a http://localhost:3000 (admin/admin)
+1. Descargar desde: https://grafana.com/grafana/download?platform=windows
+2. Extraer en `C:\Grafana\`
+3. Ejecutar `grafana-server.exe` desde `bin\`
+4. Acceder a http://localhost:3000 (admin / admin)
 5. Configurar data source MySQL
-6. Crear dashboard con 6 paneles
+6. Crear dashboard con los paneles descritos más abajo
 
-- [inidce](#-índice)
+---
 
 ## Uso del Sistema
 
-### Modo 1: Con Hardware Real (ESP32)
+### Modo 1: Simulación con Wokwi
 
-#### A. Cargar código al ESP32
+Permite probar el sistema completo sin hardware físico.
+El ESP32 y sus sensores se simulan visualmente en el navegador.
 
-```bash
-# Usar Thonny IDE
-# 1. Conectar ESP32 por USB
-# 2. Copiar esp32_main.py al ESP32
-# 3. Copiar config.py al ESP32
-# 4. Ejecutar
-```
-
-#### B. Iniciar servidor MQTT
+#### Paso 1 — Iniciar el servidor Python
 
 ```bash
-python servidor_mqtt_mysql.py
+cd servidor
+python servidor.py
 ```
 
-#### C. Ejecutar ESP32
+Salida esperada:
 
-```bash
-# En Thonny: Run → Run current script
-# O presionar F5
+```
+[MySQL] ¡Conectado exitosamente!
+[MQTT]  ¡Conectado al broker!
+[SISTEMA] Esperando datos del ESP32...
 ```
 
-#### D. Abrir Dashboard Grafana
+#### Paso 2 — Abrir el circuito en Wokwi
+
+1. Ir a https://wokwi.com → **New Project** → **ESP32** → **MicroPython**
+2. Reemplazar `diagram.json` con el contenido de `wokwi/diagram.json`
+3. Reemplazar `main.py` con el contenido de `wokwi/main.py`
+4. Crear un archivo `settings.py` y pegar el contenido de `wokwi/settings.py`
+5. Clic en **▶ Play**
+6. Mover el **slider del LDR** para simular distintos niveles de luz
+7. Observar los datos en el **Monitor Serie**
+
+#### Paso 3 — Verificar en Grafana
 
 ```
 http://localhost:3000
 ```
 
-- [inidce](#-índice)
+---
 
-### Modo 2: Sin Hardware (Simulación)
+### Modo 2: Con Hardware Real (ESP32)
 
-#### Terminal 1 - Servidor
+#### Circuito físico
+
+```
+ESP32  3V3   ──── LDR terminal 1
+              LDR terminal 2 ──┬── ESP32 GPIO34  (ADC1)
+                               │
+                             10 kΩ
+                               │
+ESP32  GND   ──────────────────┘
+
+ESP32  GPIO2 ──── LED (+) ──── R 220Ω ──── GND
+```
+
+> ⚠️ Usar GPIO34 para el LDR (ADC1). GPIO25 pertenece al ADC2 y se deshabilita cuando WiFi está activo.
+
+#### Cargar el código al ESP32 con Thonny
+
+1. Conectar el ESP32 por USB
+2. Abrir Thonny → seleccionar intérprete MicroPython (ESP32)
+3. Subir `wokwi/main.py` al ESP32 como **`main.py`**
+4. Subir `wokwi/settings.py` al ESP32 como **`settings.py`**
+5. Editar `settings.py` en el ESP32: cambiar `WIFI_SSID` y `WIFI_PASSWORD` por los de tu red real
+6. Reiniciar el ESP32
+
+#### Iniciar el servidor
 
 ```bash
-python servidor_mqtt_mysql.py
+cd servidor
+python servidor.py
 ```
 
-Deberías ver:
-
-```
-============================================================
-🚀 SERVIDOR MQTT → MySQL para Sistema IoT
-============================================================
-[MySQL] ✅ Conectado exitosamente
-[MQTT] ✅ Conectado al broker: broker.hivemq.com
-```
-
-#### Terminal 2 - Simulador
-
-```bash
-python simulador.py
-```
-
-Deberías ver:
-
-```
-============================================================
-🎮 SIMULADOR ESP32 - Sistema de Iluminación
-============================================================
-[0001] 🌙 Luz:  654 | 💡 LED: ENCENDIDO
-[0002] ☀️ Luz:  823 | ⚫ LED: APAGADO
-```
-
-#### Terminal 3 - Grafana
-
-```bash
-# Iniciar Grafana (si no está corriendo)
-cd "C:\Grafana\grafana-v10.x.x\bin"
-grafana-server.exe
-```
-
-#### Navegador
+#### Abrir Grafana
 
 ```
 http://localhost:3000
 ```
 
-- [inidce](#-índice)
+---
 
 ## Dashboard de Grafana
 
-### Paneles Disponibles
+### Paneles disponibles
 
-1. **Gráfico de Luminosidad en Tiempo Real**
+1. **Luminosidad en Tiempo Real** — gráfico de línea, rango 0–4095, actualización cada 5s
+2. **Estado del LED** — indicador ENCENDIDO/APAGADO con código de colores
+3. **Distribución Luz Alta/Baja** — gráfico circular con porcentajes
+4. **Últimas 20 Lecturas** — tabla con ID, nivel de luz, estado LED, clasificación y timestamp
 
-   - Visualización continua de niveles de luz
-   - Rango: 0-1023
-   - Actualización automática cada 5 segundos
-   - Tipo: Time Series (línea)
-
-2. **Estado Actual del LED**
-
-   - Indicador visual ENCENDIDO/APAGADO
-   - Código de colores (Verde/Rojo)
-   - Tipo: Stat
-
-3. **Distribución Luz Alta/Baja**
-
-   - Gráfico circular de clasificaciones
-   - Porcentajes en tiempo real
-   - Tipo: Pie Chart
-
-4. **Últimas 20 Lecturas**
-
-   - Tabla con historial reciente
-   - Columnas: ID, Nivel Luz, Estado LED, Clasificación, Fecha/Hora
-   - Tipo: Table
-
-- [inidce](#-índice)
+---
 
 ## Funcionamiento del Sistema
 
-### Flujo de Datos
+### Flujo de datos
 
 ```
-┌─────────┐      ┌──────────┐      ┌────────┐      ┌────────┐
-│ ESP32   │─WiFi→│  MQTT    │─────→│ MySQL  │─────→│Grafana │
-│ + LDR   │      │  Broker  │      │   DB   │      │Dashboard│
-└─────────┘      └──────────┘      └────────┘      └────────┘
-     │                                                    ↓
-     └─────────── Control LED ←──────────────────────────┘
+┌──────────────┐      ┌───────────┐      ┌────────┐      ┌─────────┐
+│  ESP32       │─────▶│   MQTT    │─────▶│ MySQL  │─────▶│ Grafana │
+│  LDR + LED   │ WiFi │  Broker   │      │   DB   │      │Dashboard│
+└──────────────┘      └───────────┘      └────────┘      └─────────┘
 ```
 
-**Explicación:**
+1. ESP32 lee el LDR cada 2 segundos
+2. Publica luminosidad y estado del LED por MQTT
+3. El servidor Python recibe los mensajes y hace INSERT en MySQL
+4. Grafana consulta MySQL cada 5 segundos y actualiza los paneles
 
-1. ESP32 lee el sensor LDR cada 2 segundos
-2. Envía datos por MQTT al broker público
-3. Servidor Python recibe datos y los guarda en MySQL
-4. Grafana consulta MySQL cada 5 segundos
-5. Dashboard muestra datos actualizados
-6. Sistema de alertas monitorea condiciones críticas
+### Lógica de control
 
-### Lógica de Control
+**Umbral: 3000** (escala 12 bits ADC del ESP32, rango 0–4095)
 
-**Umbral:** 750
-
-- **Si luminosidad ≤ 750:**
-
-  - LED: ENCENDIDO
-  - Clasificación: LUZ_BAJA
-  - Color en Grafana: Amarillo/Naranja
-
-- **Si luminosidad > 750:**
-  - LED: APAGADO
-  - Clasificación: LUZ_ALTA
-  - Color en Grafana: Verde
-- [inidce](#-índice)
+| Condición          | LED       | Clasificación |
+| ------------------ | --------- | ------------- |
+| luminosidad ≤ 3000 | ENCENDIDO | LUZ_BAJA      |
+| luminosidad > 3000 | APAGADO   | LUZ_ALTA      |
 
 ### Arquitectura de 5 Capas IoT
 
@@ -311,24 +243,86 @@ http://localhost:3000
 4. **Capa de Transporte:** Protocolo MQTT v3.1.1
 5. **Capa de Aplicación:** Servidor Python + MySQL + Grafana
 
-![Arquitectura 5 capas](./images/Arquitectura%205%20capas.png)
+![Arquitectura 5 capas](./docs/images/Arquitectura%205%20capas.png)
 
-- [inidce](#-índice)
+---
 
 ## Consultas Útiles en Grafana
 
-### Ver datos en tiempo real
+Para cada panel: **+ → New dashboard → Add visualization → MySQL → (seleccionar tipo) → Query → Code → pegar query → Shift+Enter → Apply**
+
+> `$__timeFilter(timestamp)` es una variable de Grafana que filtra automáticamente
+> por el rango de tiempo seleccionado arriba a la derecha del dashboard.
+
+---
+
+### Luminosidad en tiempo real
+
+**Visualización:** `Time series`
 
 ```sql
-SELECT
-  timestamp AS "time",
-  nivel_luz
+SELECT timestamp AS "time", nivel_luz
 FROM datos_luminosidad
 WHERE $__timeFilter(timestamp)
 ORDER BY timestamp
 ```
 
-### Estadísticas del día
+---
+
+### Estado del LED
+
+**Visualización:** `Stat`
+
+```sql
+SELECT estado_led
+FROM datos_luminosidad
+ORDER BY timestamp DESC
+LIMIT 1
+```
+
+> En opciones del panel → **Value mappings**: `ENCENDIDO` → color verde / `APAGADO` → color rojo.
+
+---
+
+### Distribución Luz Alta/Baja
+
+**Visualización:** `Pie chart`
+
+```sql
+SELECT
+    clasificacion,
+    COUNT(*) as cantidad,
+    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM datos_luminosidad), 2) as porcentaje
+FROM datos_luminosidad
+GROUP BY clasificacion;
+```
+
+---
+
+### Últimas 20 lecturas
+
+**Visualización:** `Table`
+
+```sql
+SELECT
+    id,
+    nivel_luz,
+    estado_led,
+    clasificacion,
+    timestamp
+FROM datos_luminosidad
+WHERE $__timeFilter(timestamp)
+ORDER BY timestamp DESC
+LIMIT 20
+```
+
+---
+
+### Queries adicionales
+
+#### Estadísticas del día
+
+**Visualización:** `Stat`
 
 ```sql
 SELECT
@@ -340,7 +334,9 @@ FROM datos_luminosidad
 WHERE DATE(timestamp) = CURDATE();
 ```
 
-### Tiempo con LED encendido
+#### Tiempo con LED encendido
+
+**Visualización:** `Stat`
 
 ```sql
 SELECT
@@ -351,82 +347,27 @@ WHERE estado_led = 'ENCENDIDO'
   AND timestamp >= NOW() - INTERVAL 24 HOUR;
 ```
 
-### Distribución por clasificación
-
-```sql
-SELECT
-  clasificacion,
-  COUNT(*) as cantidad,
-  ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM datos_luminosidad), 2) as porcentaje
-FROM datos_luminosidad
-GROUP BY clasificacion;
-```
+---
 
 ## Solución de Problemas
 
-- [inidce](#-índice)
-
 ### Grafana no muestra datos
 
-1. ✅ Verificar que MySQL está corriendo
-
+1. Verificar que MySQL está corriendo
    ```bash
-   # Windows: Services → MySQL → Running
-   # Linux: sudo systemctl status mysql
+   # Windows: Servicios → MySQL → En ejecución
    ```
+2. Grafana → Configuration → Data Sources → Save & test
+3. Verificar que hay datos: `SELECT COUNT(*) FROM datos_luminosidad;`
+4. Ajustar el rango de tiempo a "Last 15 minutes"
 
-2. ✅ Verificar conexión en Grafana → Configuration → Data Sources
-
-   - Host: localhost:3306
-   - Database: control_iluminacion
-   - Hacer clic en "Save & test"
-
-3. ✅ Ejecutar query de prueba en Explore
-
-   ```sql
-   SELECT COUNT(*) FROM datos_luminosidad;
-   ```
-
-4. ✅ Revisar que hay datos en la tabla
-   ```bash
-   mysql -u root -p
-   USE control_iluminacion;
-   SELECT * FROM datos_luminosidad LIMIT 10;
-   ```
-
-- [inidce](#-índice)
-
-### Servidor Python no conecta a MySQL
+### Servidor no conecta a MySQL
 
 ```
-[MySQL] ❌ ERROR: Access denied for user 'root'@'localhost'
+[MySQL] ERROR: Access denied for user 'root'@'localhost'
 ```
 
-**Solución:**
-
-- Verificar contraseña en `.env` o `config.py`
-- Verificar usuario MySQL existe y tiene permisos
-
-### Simulador no envía datos
-
-```
-[MQTT] ❌ ERROR: Connection refused
-```
-
-**Solución:**
-
-- Verificar conexión a internet
-- El broker público puede estar saturado, esperar unos minutos
-- Alternativa: instalar Mosquitto local
-
-### Dashboard no se actualiza
-
-1. Verificar el intervalo de refresh (arriba derecha)
-   - Cambiar a "5s" o "10s"
-2. Asegurarse que el time range incluye datos recientes
-   - Usar "Last 15 minutes" o "Last 1 hour"
-3. Hacer clic en el botón "Refresh dashboard"
-4. Reiniciar Grafana si es necesario
+Verificar contraseña en `.env` y que el usuario MySQL tiene permisos.
 
 ### ESP32 no conecta a WiFi
 
@@ -434,48 +375,45 @@ GROUP BY clasificacion;
 [WiFi] ERROR: No se pudo conectar
 ```
 
-**Solución:**
+- Verificar `WIFI_SSID` y `WIFI_PASSWORD` en `wokwi/settings.py`
+- El ESP32 solo soporta redes **2.4GHz** (no 5GHz)
 
-- Verificar SSID y contraseña en `config.py`
-- Asegurar que la red es 2.4GHz (ESP32 no soporta 5GHz)
-- Reiniciar router y ESP32
+### Wokwi no envía datos MQTT
 
-- [inidce](#-índice)
+- Verificar que el servidor Python está corriendo antes de iniciar Wokwi
+- El broker `broker.hivemq.com` es público — si falla, puede estar saturado, esperar unos minutos
 
-## Acceso Web
-
-- **Grafana Dashboard:** http://localhost:3000
-- **Usuario por defecto:** admin
-- **Contraseña:** admin (o la que configuraste)
+---
 
 ## Tecnologías Utilizadas
 
-- **Hardware:** ESP32 DevKit, Sensor LDR, LED 5mm
-- **Firmware:** MicroPython 1.20+
-- **Protocolos:** WiFi 802.11 b/g/n, MQTT 3.1.1
-- **Backend:** Python 3.8+
-- **Base de Datos:** MySQL 8.0+
-- **Visualización:** Grafana 10.0+
-- **Broker MQTT:** HiveMQ (broker público gratuito)
-- **Librerías Python:**
-  - paho-mqtt 1.6.1
-  - mysql-connector-python 8.0.33
-- [inidce](#-índice)
+| Componente            | Tecnología                                     |
+| --------------------- | ---------------------------------------------- |
+| Microcontrolador      | ESP32 DevKit C V4                              |
+| Firmware              | MicroPython v1.22.0                            |
+| Sensor                | LDR (fotorresistor) en GPIO34                  |
+| Actuador              | LED en GPIO2                                   |
+| Simulador de circuito | Wokwi                                          |
+| Protocolo IoT         | MQTT v3.1.1                                    |
+| Broker MQTT           | HiveMQ (broker público)                        |
+| Comunicación          | WiFi 802.11 b/g/n (2.4GHz)                     |
+| Backend               | Python 3.8+                                    |
+| Base de datos         | MySQL 8.0+                                     |
+| Visualización         | Grafana 10.0+                                  |
+| Librerías Python      | paho-mqtt 1.6.1, mysql-connector-python 8.0.33 |
+
+---
 
 ## Autores
 
-**Evidencia de Aprendizaje N°3**
+- **Alumnos:** Fernando Agustín Moyano, Santiago Ortega
+- **Materia:** Aproximación al Mundo del Trabajo
+- **Profesor:** Mainero Alejandro Luis
+- **Instituto:** ISPC — Tecnicatura Superior en Desarrollo de Software
+- **Año:** 2025
 
-- ISPC - Tecnicatura Superior en Desarrollo de Software
-- Alumnos: Fernando Agustín Moyano, Santiago Ortega
-- Materia: Aproximación al Mundo del Trabajo
-- Profesor: Mainero Alejandro Luis
-- Año: 2025
-
-- [inidce](#-índice)
+---
 
 ## Licencia
 
-Proyecto académico - ISPC 2025
-
----
+Proyecto académico — ISPC 2025
